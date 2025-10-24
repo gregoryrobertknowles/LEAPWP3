@@ -1,10 +1,14 @@
 import os
 
 from preprocessors.edfpreprocessor import EDFPreprocessorAcc as edfaccpp
+from preprocessors.edfpreprocessor import EDFPreprocessorECG as edfecgpp
 from preprocessors.avropreprocessor import AvroAcc as avroaccpp
 from preprocessors.oepreprocessor import OEAccPreprocessor as oeaccpp
 from preprocessors.concat_avro import AvroMerger
 
+from sync import synchotron
+
+from plotters.plotters import TimeSeriesPlot
 
 if __name__ == "__main__":
 
@@ -12,8 +16,8 @@ if __name__ == "__main__":
     participant_id = "P05"
     path = os.path.join(data_dir_path, participant_id)
 
-    OELpath = os.path.join(path, "Pilot05.oe")
-    OERpath = None
+    OELpath = os.path.join(path, "Pilot05L.oe")
+    OERpath = os.path.join(path, "Pilot05R.oe")
 
     avro_files = []
     for root, dirs, files in os.walk(path):
@@ -26,13 +30,18 @@ if __name__ == "__main__":
     # avromerger.merge_avro_files(merged_avro_output_path)
     # AVROpath = merged_avro_output_path
 
-    # EDFpath = os.path.join(path, "Pilot05.edf")
+    EDFpath = os.path.join(path, "P05.edf")
 
     # continue for others but lets just plot for now
 
-    oedataL = oeaccpp(OELpath)
-    # oedataR = oeaccpp(OERpath)
-    # avrodata = avroaccpp(AVROpath)
-    oedataL = oedataL.load()
-    print(oedataL["imu"]["acc"].head())
-    print(oedataL["ppg"].head())
+    oedataL = oeaccpp(OELpath).load()
+    # oedataR = oeaccpp(OERpath).load()
+    edfaccdata = edfaccpp(EDFpath).load()
+    edfecgdata = edfecgpp(EDFpath).load()
+    # avrodata = avroaccpp(AVROpath).load()
+    print("Data loaded")
+
+    TimeSeriesPlot(edfecgdata["datetime"], edfecgdata["ECG"]).plot()
+    # TimeSeriesPlot(
+    #   oedataL["datetime"], oedataL["ppg"]["red"], title="OE-L PPG Red Channel"
+    # ).plot()
