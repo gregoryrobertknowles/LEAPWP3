@@ -6,11 +6,12 @@ import pandas as pd
 class OEAccPreprocessor(AbstractProcessor):
     def __init__(self, filepath):
         self.filepath = filepath
-        self.data = None
+        self.data = {"imu": {}, "ppg": {}}
 
     def load(self):
         ds = SensorDataset(self.filepath)
-        self.data = ds.imu.acc
+        self.data["imu"]["acc"] = ds.imu.acc
+        self.data["ppg"] = ds.ppg
         return self.data
 
 
@@ -21,4 +22,4 @@ if __name__ == "__main__":
     # Example usage
     oepp = OEAccPreprocessor(r"syncingdata\rightOE22Aug1057.oe")
     data = oepp.load()
-    print(data.head())
+    print(data["imu"]["acc"].head())
