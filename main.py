@@ -6,7 +6,7 @@ from preprocessors.avropreprocessor import AvroAcc as avroaccpp
 from preprocessors.oepreprocessor import OEPreprocessor as oepp
 from preprocessors.concat_avro import AvroMerger
 
-from sync import synchotron
+from sync.synchotron import synchotron
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,21 +26,32 @@ if __name__ == "__main__":
             if file.endswith(".avro"):
                 avro_files.append(os.path.join(root, file))
 
-    # avromerger = AvroMerger(avro_files)
-    # merged_avro_output_path = os.path.join(path, f"{participant_id}_merged.avro")
-    # avromerger.merge_avro_files(merged_avro_output_path)
-    # AVROpath = merged_avro_output_path
+    avromerger = AvroMerger(avro_files)
+    merged_avro_output_path = os.path.join(path, f"{participant_id}_merged.avro")
+    avromerger.merge_avro_files(merged_avro_output_path)
+    AVROpath = merged_avro_output_path
 
     EDFpath = os.path.join(path, "P05.edf")
 
     # continue for others but lets just plot for now
 
     oedataL = oepp(OELpath).load()
-    # oedataR = oeaccpp(OERpath).load()
-    # edfaccdata = edfaccpp(EDFpath).load()
+    oedataR = oepp(OERpath).load()
+    edfaccdata = edfaccpp(EDFpath).load()
     # edfecgdata = edfecgpp(EDFpath).load()
-    # avrodata = avroaccpp(AVROpath).load()
+    avroaccdata = avroaccpp(AVROpath).load()
     print("Data loaded")
+
+    syncer = synchotron(
+        avroaccdata,
+        edfaccdata,
+        oedataL,
+        oedataR,
+    )
+    syncer.plot_unsynced()
+    syncer.plot_windowed()
+
+    avro_shift, oeL_shift, oeR_shift = syncer.sync()
 
     # plot OE L PPG Red on its own for now, there is no datetime index so just use sample number
     oedataL_ppg_red = oedataL["ppg"]["red"]
