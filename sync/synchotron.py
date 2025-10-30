@@ -1,6 +1,6 @@
 from preprocessors.edfpreprocessor import EDFPreprocessorAcc as edfaccpp
 from preprocessors.avropreprocessor import AvroAcc as avroaccpp
-from preprocessors.oepreprocessor import OEAccPreprocessor as oeaccpp
+from preprocessors.oepreprocessor import OEPreprocessor as oeaccpp
 
 from scipy.signal import find_peaks
 import numpy as np
@@ -12,8 +12,8 @@ class synchotron:
     def __init__(self, avrodata, edfdata, oedataL, oedataR):
         self.avroaccdata = avrodata.reset_index()
         self.edfaccdata = edfdata
-        self.oedataL = oedataL.reset_index()
-        self.oedataR = oedataR.reset_index()
+        self.oedataL = oedataL["imu"]["acc"].reset_index()
+        self.oedataR = oedataR["imu"]["acc"].reset_index()
         self.avroaccdata = self.zscore_axes(self.avroaccdata)
         self.edfaccdata = self.zscore_axes(self.edfaccdata)
         self.oedataL = self.zscore_axes(self.oedataL)
@@ -353,7 +353,7 @@ class synchotron:
 
         return self.avrosync, self.oesyncL, self.oesyncR
 
-    def sync(self, show = False):
+    def sync(self, show=False):
         self.avrosync, self.oesyncL, self.oesyncR = self.sync_to_edf(show=False)
         avro_shift = self.avrosync["epoch_shift_seconds"]
         self.avroaccdata["datetime"] = self.avroaccdata["datetime"] + pd.to_timedelta(
