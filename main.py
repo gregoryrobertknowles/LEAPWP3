@@ -3,12 +3,13 @@ import os
 from preprocessors.edfpreprocessor import EDFPreprocessorAcc as edfaccpp
 from preprocessors.edfpreprocessor import EDFPreprocessorECG as edfecgpp
 from preprocessors.avropreprocessor import AvroAcc as avroaccpp
-from preprocessors.oepreprocessor import OEAccPreprocessor as oeaccpp
+from preprocessors.oepreprocessor import OEPreprocessor as oepp
 from preprocessors.concat_avro import AvroMerger
 
 from sync import synchotron
 
-from plotters.plotters import TimeSeriesPlot
+import matplotlib.pyplot as plt
+import numpy as np
 
 if __name__ == "__main__":
 
@@ -34,14 +35,39 @@ if __name__ == "__main__":
 
     # continue for others but lets just plot for now
 
-    oedataL = oeaccpp(OELpath).load()
+    oedataL = oepp(OELpath).load()
     # oedataR = oeaccpp(OERpath).load()
-    edfaccdata = edfaccpp(EDFpath).load()
-    edfecgdata = edfecgpp(EDFpath).load()
+    # edfaccdata = edfaccpp(EDFpath).load()
+    # edfecgdata = edfecgpp(EDFpath).load()
     # avrodata = avroaccpp(AVROpath).load()
     print("Data loaded")
 
-    TimeSeriesPlot(edfecgdata["datetime"], edfecgdata["ECG"]).plot()
-    # TimeSeriesPlot(
-    #   oedataL["datetime"], oedataL["ppg"]["red"], title="OE-L PPG Red Channel"
-    # ).plot()
+    # plot OE L PPG Red on its own for now, there is no datetime index so just use sample number
+    oedataL_ppg_red = oedataL["ppg"]["red"]
+
+    print(type(oedataL_ppg_red))
+    print(oedataL_ppg_red.head())
+
+    oedataL_ppg_red = oedataL["ppg"]["red"]
+    if oedataL_ppg_red is None:
+        raise RuntimeError(
+            "OE L PPG Red data is None; check loader output and file paths"
+        )
+
+    # convert whatever the loader returned to a 1D numpy array
+    if hasattr(oedataL_ppg_red, "values"):
+        data_arr = np.asarray(oedataL_ppg_red.values)
+    else:
+        data_arr = np.asarray(oedataL_ppg_red)
+
+    x = np.arange(data_arr.shape[0])
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(x, data_arr, label="OE L PPG Red", color="red")
+    ax.set_xlabel("Sample Number")
+    ax.set_ylabel("Amplitude")
+    ax.set_title(f"{participant_id} OE L PPG Red Signal")
+    ax.legend()
+    ax.grid(True)
+    plt.show()
+    plt.show()

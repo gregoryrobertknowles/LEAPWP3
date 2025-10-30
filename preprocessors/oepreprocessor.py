@@ -3,15 +3,25 @@ from .oeparser import SensorDataset
 import pandas as pd
 
 
-class OEAccPreprocessor(AbstractProcessor):
+class OEPreprocessor(AbstractProcessor):
     def __init__(self, filepath):
         self.filepath = filepath
-        self.data = {"imu": {}, "ppg": {}}
+        self.data = {}
 
     def load(self):
         ds = SensorDataset(self.filepath)
-        self.data["imu"]["acc"] = ds.imu.acc
-        self.data["ppg"] = ds.ppg
+        self.data = {
+            "imu": {
+                "acc": ds.imu.acc,
+                "gyro": ds.imu.gyro,
+            },
+            "ppg": {
+                "red": ds.ppg.red,
+                "ir": ds.ppg.ir,
+                "green": ds.ppg.green,
+            },
+        }
+
         return self.data
 
 
