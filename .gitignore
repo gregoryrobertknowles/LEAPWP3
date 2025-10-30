@@ -1,4 +1,7 @@
+*.pyc 
+
 data
+
 *.pyc
 *.pyo
 *.pyd

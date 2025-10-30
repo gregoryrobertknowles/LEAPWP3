@@ -9,7 +9,17 @@ import matplotlib.pyplot as plt
 
 
 class synchotron:
-    def __init__(self, avrodata, edfdata, oedataL, oedataR):
+    def __init__(
+        self,
+        avrodata,
+        edfdata,
+        oedataL,
+        oedataR,
+        avro_window=None,
+        edf_window=None,
+        oeL_window=None,
+        oeR_window=None,
+    ):
         self.avroaccdata = avrodata.reset_index()
         self.edfaccdata = edfdata
         self.oedataL = oedataL["imu"]["acc"].reset_index()
@@ -30,6 +40,7 @@ class synchotron:
             post_sec=4,
             Fs=self.avroFs,
             time_col="datetime",
+            manual_window=avro_window,
         )
         self.edf_window = self.extract_window(
             self.edfaccdata,
@@ -37,6 +48,7 @@ class synchotron:
             post_sec=4,
             Fs=self.edfFs,
             time_col="datetime",
+            manual_window=edf_window,
         )
         self.oe_windowL = self.extract_window(
             self.oedataL,
@@ -44,6 +56,7 @@ class synchotron:
             post_sec=4,
             Fs=self.oeFsL,
             time_col="timestamp",
+            manual_window=oeL_window,
         )
         self.oe_windowR = self.extract_window(
             self.oedataR,
@@ -51,6 +64,7 @@ class synchotron:
             post_sec=4,
             Fs=self.oeFsR,
             time_col="timestamp",
+            manual_window=oeR_window,
         )
         # ==============================================================================================================================
 
@@ -152,8 +166,15 @@ class synchotron:
 
         return df
 
-    def extract_window(
-        self, df, threshold=None, pre_sec=1, post_sec=4, Fs=None, time_col=None
+    def extract_window(  # in here add manual window option
+        self,
+        df,
+        threshold=None,
+        pre_sec=1,
+        post_sec=4,
+        Fs=None,
+        time_col=None,
+        manual_window=None,
     ):
         # Determine sample rate and time column
         if Fs is None:
@@ -187,7 +208,7 @@ class synchotron:
         print(
             f"Extracted window from index {start_idx} to {end_idx} ({pre_sec}s before and {post_sec}s after first 95% max point)"
         )
-        print(windowed_df[[time_col, "abs_mag_z"]].head(10))
+        # print(windowed_df[[time_col, "abs_mag_z"]].head(10))
         return windowed_df
 
         # ----------------------------------------------------------------------
