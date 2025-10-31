@@ -30,6 +30,6 @@ class OEPreprocessor(AbstractProcessor):
 
 if __name__ == "__main__":
     # Example usage
-    oepp = OEAccPreprocessor(r"syncingdata\rightOE22Aug1057.oe")
+    oepp = OEPreprocessor(r"syncingdata\rightOE22Aug1057.oe")
     data = oepp.load()
     print(data["imu"]["acc"].head())
