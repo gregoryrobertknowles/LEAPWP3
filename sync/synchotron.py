@@ -189,6 +189,31 @@ class synchotron:
         if time_col is None:
             time_col = "datetime" if "datetime" in df.columns else "timestamp"
 
+        # If manual window is provided, use it
+        if manual_window is not None:
+            start, end = manual_window
+
+            # If the data uses datetime values (Avro, EDF)
+            if time_col == "datetime":
+                start = pd.to_datetime(start)
+                end = pd.to_datetime(end)
+                mask = (df[time_col] >= start) & (df[time_col] <= end)
+                windowed_df = df.loc[mask].reset_index(drop=True)
+                print(f"Using manual datetime window: {start} → {end}")
+
+            # If the data uses float timestamps (OE sensors)
+            elif time_col == "timestamp":
+                start = float(start)
+                end = float(end)
+                mask = (df[time_col] >= start) & (df[time_col] <= end)
+                windowed_df = df.loc[mask].reset_index(drop=True)
+                print(f"Using manual timestamp window: {start:.3f}s → {end:.3f}s")
+
+            else:
+                raise ValueError(f"Unknown time_col '{time_col}'")
+
+            return windowed_df
+
         # Set threshold to 95% of max if not provided
         if threshold is None:
             threshold = 0.75 * df["abs_mag_z"].max()
