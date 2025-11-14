@@ -66,3 +66,23 @@ class TimeSeriesPlot:
         )
 
         plt.show()
+
+
+def plot_ppg_signals(oedata, participant_id, label=""):
+    """Plot red, green, and IR PPG signals from a given oedata structure."""
+    ppg_red = np.asarray(oedata["ppg"]["red"].values)
+    ppg_green = np.asarray(oedata["ppg"]["green"].values)
+    ppg_ir = np.asarray(oedata["ppg"]["ir"].values)
+
+    x = np.arange(ppg_red.shape[0])
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(x, ppg_red, color="red", label="Red")
+    ax.plot(x, ppg_green, color="green", label="Green")
+    ax.plot(x, ppg_ir, color="black", label="IR")
+    ax.set_xlabel("Sample Number")
+    ax.set_ylabel("Amplitude")
+    ax.set_title(f"{participant_id} {label} PPG Signals")
+    ax.legend()
+    ax.grid(True)
+    plt.show()
