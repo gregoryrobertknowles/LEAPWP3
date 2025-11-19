@@ -480,25 +480,9 @@ def display_recordings(recordings):
 
 
 if __name__ == "__main__":
+    print("hello")
 
-    def process_files(file_paths, name):
-        ds = SensorDataset(file_paths)
-        ds.imu.acc.to_csv(f"{name}_acceleration.csv")
-        # ppg
-        # ds.ppg.to_csv(f"{name}_ppg.csv")
-
-        # process_files(r"leftear\sensor_log_132111358.oe", "leftear1")
-        # process_files(r"leftear\sensor_log_482773651.oe", "leftear2")
-        # process_files(r"rightear\sensor_log_145267730.oe", "rightear1")
-        # process_files(
-
-    # r"C:\Users\GRK\OneDrive - University of Bath\Christopher Clarke's files - Research\WP3\Data\openearable_debug\6AugAfternoon\sensor_log_169678405.oe",
-    # "6AugPM-1",
-
-    # )
-
-    # plot acc
-
-    # Plot the IMU data for 6AugPM-1
-    ds = SensorDataset(r"syncingdata\rightOE22Aug1057.oe")
-    ds.plot()
+    ds = SensorDataset(r"data/P07/P07L.oe")
+    print(ds.barometer)
+    ds = SensorDataset(r"data/P07/P07R.oe")
+    print(ds.barometer)

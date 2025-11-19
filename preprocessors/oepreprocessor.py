@@ -20,6 +20,11 @@ class OEPreprocessor(AbstractProcessor):
                 "ir": ds.ppg.ir,
                 "green": ds.ppg.green,
             },
+            "barometer": {
+                "temperature": ds.barometer.temperature,
+                "pressure": ds.barometer.pressure,
+            },
+            "bone_acc": ds.bone_acc,
         }
 
         return self.data
@@ -30,6 +35,7 @@ class OEPreprocessor(AbstractProcessor):
 
 if __name__ == "__main__":
     # Example usage
-    oepp = OEPreprocessor(r"syncingdata\rightOE22Aug1057.oe")
+    oepp = OEPreprocessor(r"data/pilotp05/Pilot05L.oe")
     data = oepp.load()
     print(data["imu"]["acc"].head())
+  
