@@ -3,6 +3,7 @@ import json
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
 from avro.schema import parse as parse_schema
+from datetime import datetime
 
 
 class AvroMerger:
@@ -51,18 +52,18 @@ class AvroMerger:
 
         return base
 
-    def trim_avro_by_time(
-        self, input_file, output_file, start_time_nanos, end_time_nanos
-    ):
+    def trim_avro_by_time(self, input_file, output_file, start_time, end_time):
         """
-        Trim an Avro file to keep only data between start_time_nanos and end_time_nanos.
+        Trim an Avro file to keep only data between start_time and end_time.
 
         Args:
             input_file: Path to the input Avro file
             output_file: Path to write the trimmed Avro file
-            start_time_nanos: Start time in nanoseconds
-            end_time_nanos: End time in nanoseconds
+            start_time: Start time in microseconds
+            end_time: End time in microseconds
         """
+        print(f"\n[INFO] Trimming from {start_time} to {end_time}")
+
         # Load the Avro file
         data, schema = self.load_raw_avro(input_file)
 
@@ -74,9 +75,8 @@ class AvroMerger:
             if sensor_key == "systolicPeaks":
                 # Filter peaks by time
                 peaks = sensor_data.get("peaksTimeNanos", [])
-                filtered_peaks = [
-                    p for p in peaks if start_time_nanos <= p <= end_time_nanos
-                ]
+                # Assuming peaks are in microseconds (based on the data inspection)
+                filtered_peaks = [p for p in peaks if start_time <= p <= end_time]
                 sensor_data["peaksTimeNanos"] = filtered_peaks
                 print(f"  {sensor_key}: {len(peaks)} -> {len(filtered_peaks)} peaks")
 
@@ -84,8 +84,10 @@ class AvroMerger:
                 # For other sensors with timestampStart and arrays
                 timestamp_start = sensor_data.get("timestampStart")
 
-                if timestamp_start is None:
-                    print(f"  Warning: {sensor_key} has no timestampStart, skipping")
+                if timestamp_start is None or timestamp_start == 0:
+                    print(
+                        f"  Warning: {sensor_key} has no valid timestampStart, skipping"
+                    )
                     continue
 
                 # Find all array fields
@@ -96,44 +98,52 @@ class AvroMerger:
                 if not array_fields:
                     continue
 
-                # Assume all arrays have the same length
+                # Get the length of arrays (assume all same length)
                 original_length = len(next(iter(array_fields.values())))
 
-                # Calculate indices to keep based on sampling rate or timestamps
-                # If there's a "timestampNanos" array, use it directly
-                if "timestampNanos" in array_fields:
-                    timestamps = array_fields["timestampNanos"]
-                    indices_to_keep = [
-                        i
-                        for i, ts in enumerate(timestamps)
-                        if start_time_nanos <= ts <= end_time_nanos
-                    ]
-                else:
-                    # Use timestampStart and calculate based on index
-                    # Assuming uniform sampling, we need to know the sampling rate
-                    # For now, let's assume there's enough context to calculate
-                    indices_to_keep = []
-                    for i in range(original_length):
-                        # This assumes uniform sampling - you may need to adjust
-                        # based on your actual data structure
-                        estimated_time = timestamp_start + (
-                            i * 1_000_000
-                        )  # placeholder
-                        if start_time_nanos <= estimated_time <= end_time_nanos:
-                            indices_to_keep.append(i)
+                if original_length == 0:
+                    print(f"  {sensor_key}: empty arrays, skipping")
+                    continue
+
+                # Get sampling frequency
+                sampling_freq = sensor_data.get("samplingFrequency")
+
+                if sampling_freq is None or sampling_freq == 0:
+                    print(f"  Warning: {sensor_key} has no samplingFrequency, skipping")
+                    continue
+
+                # Calculate the interval between samples in microseconds
+                interval_micros = int(1_000_000 / sampling_freq)
+
+                # Calculate which indices to keep
+                indices_to_keep = []
+                for i in range(original_length):
+                    timestamp = timestamp_start + (i * interval_micros)
+                    if start_time <= timestamp <= end_time:
+                        indices_to_keep.append(i)
+
+                if not indices_to_keep:
+                    print(f"  {sensor_key}: no samples in time range, clearing arrays")
+                    # Clear all arrays
+                    for field_name in array_fields.keys():
+                        sensor_data[field_name] = []
+                    continue
 
                 # Trim all arrays
                 for field_name, field_values in array_fields.items():
                     sensor_data[field_name] = [field_values[i] for i in indices_to_keep]
 
-                # Update timestampStart if we have timestamps
-                if indices_to_keep and "timestampNanos" in array_fields:
-                    sensor_data["timestampStart"] = array_fields["timestampNanos"][
-                        indices_to_keep[0]
-                    ]
+                # Update timestampStart to the first kept timestamp
+                new_timestamp_start = timestamp_start + (
+                    indices_to_keep[0] * interval_micros
+                )
+                sensor_data["timestampStart"] = new_timestamp_start
 
                 print(
                     f"  {sensor_key}: {original_length} -> {len(indices_to_keep)} samples"
+                )
+                print(
+                    f"    New timestampStart: {new_timestamp_start} ({datetime.fromtimestamp(new_timestamp_start / 1_000_000)})"
                 )
 
         # Write trimmed data to output file
